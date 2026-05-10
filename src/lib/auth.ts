@@ -20,6 +20,7 @@ function createAdapter() {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   adapter: createAdapter(),
   providers: [
     Resend({
@@ -31,6 +32,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 90 * 24 * 60 * 60,
   },
   callbacks: {
+    authorized({ request, auth }) {
+      const { pathname } = request.nextUrl;
+      if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) return true;
+      return !!auth;
+    },
     session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;

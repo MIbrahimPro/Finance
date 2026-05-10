@@ -1,27 +1,45 @@
 'use client';
 
 import { signIn, useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  Verification: 'The magic link has expired or already been used. Request a new one.',
+  AccessDenied: 'Access denied. Please try again.',
+  OAuthSignin: 'There was a problem signing in. Please try again.',
+  OAuthCallback: 'There was a problem processing the sign-in. Please try again.',
+  default: 'Something went wrong. Please try again.',
+};
+
+function LoginForm() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const urlError = searchParams.get('error');
+
   useEffect(() => {
-    if (session) router.push('/');
-  }, [session, router]);
+    if (session) router.push(callbackUrl);
+  }, [session, router, callbackUrl]);
+
+  useEffect(() => {
+    if (urlError) {
+      setError(ERROR_MESSAGES[urlError] || ERROR_MESSAGES.default);
+    }
+  }, [urlError]);
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      const res = await signIn('resend', { email, redirect: false });
+      const res = await signIn('resend', { email, redirect: false, callbackUrl });
       if (res?.error) {
-        setError(res.error);
+        setError(ERROR_MESSAGES[res.error] || ERROR_MESSAGES.default);
       } else {
         setSent(true);
       }
@@ -58,7 +76,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p className="text-danger text-xs">{error}</p>
+              <p className="bg-danger/10 text-danger text-xs p-2 rounded-lg">{error}</p>
             )}
 
             <button
@@ -75,5 +93,13 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
