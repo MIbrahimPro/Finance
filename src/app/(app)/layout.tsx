@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileNav from '@/components/layout/MobileNav';
@@ -12,7 +12,6 @@ import { db } from '@/lib/db';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   useSync();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -21,29 +20,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen flex overflow-hidden" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar only */}
       <div className="hidden lg:block">
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+        <Sidebar />
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden"
-          style={{ background: 'var(--color-overlay)' }}
-          onClick={() => setSidebarOpen(false)}
-        >
-          <div className="relative h-full" onClick={(e) => e.stopPropagation()}>
-            <Sidebar onClose={() => setSidebarOpen(false)} />
-          </div>
-        </div>
-      )}
-
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        <Header />
         <main className="flex-1 overflow-hidden p-4 md:p-6 pb-20 lg:pb-6">
           {children}
         </main>
+        {/* Bottom bar — mobile only */}
         <MobileNav />
       </div>
       <PWAPrompt />

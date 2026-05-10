@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/server/db';
-import { transactions, tags, persons, personEntries, dashboardLayouts, statsLayouts } from '@/lib/server/schema';
+import { transactions, tags, persons, personEntries, statsEntries, dashboardLayouts, statsLayouts } from '@/lib/server/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import type { SyncPayload } from '@/lib/types';
 
@@ -21,6 +21,7 @@ export async function pullRemote(since: number): Promise<SyncPayload> {
   const tagRows = await getDb().select().from(tags).where(and(eq(tags.userId, userId), gt(tags.updatedAt, sinceDate)));
   const personRows = await getDb().select().from(persons).where(and(eq(persons.userId, userId), gt(persons.updatedAt, sinceDate)));
   const entryRows = await getDb().select().from(personEntries).where(and(eq(personEntries.userId, userId), gt(personEntries.updatedAt, sinceDate)));
+  const statsEntryRows = await getDb().select().from(statsEntries).where(and(eq(statsEntries.userId, userId), gt(statsEntries.updatedAt, sinceDate)));
   const layoutRows = await getDb().select().from(dashboardLayouts).where(and(eq(dashboardLayouts.userId, userId), gt(dashboardLayouts.updatedAt, sinceDate)));
   const statsLayoutRows = await getDb().select().from(statsLayouts).where(and(eq(statsLayouts.userId, userId), gt(statsLayouts.updatedAt, sinceDate)));
 
@@ -29,6 +30,7 @@ export async function pullRemote(since: number): Promise<SyncPayload> {
     tags: tagRows.map((t: any) => ({ ...t })),
     persons: personRows.map((p: any) => ({ ...p, timestamp: p.timestamp?.getTime() ?? 0, updatedAt: p.updatedAt?.getTime() ?? 0 })),
     personEntries: entryRows.map((e: any) => ({ ...e, timestamp: e.timestamp?.getTime() ?? 0, updatedAt: e.updatedAt?.getTime() ?? 0 })),
+    statsEntries: statsEntryRows.map((s: any) => ({ ...s, timestamp: s.timestamp?.getTime() ?? 0, updatedAt: s.updatedAt?.getTime() ?? 0 })),
     dashboardLayout: layoutRows.map((l: any) => ({ ...l, updatedAt: l.updatedAt?.getTime() ?? 0 })),
     statsLayout: statsLayoutRows.map((l: any) => ({ ...l, updatedAt: l.updatedAt?.getTime() ?? 0 })),
   } as unknown as SyncPayload;
@@ -57,6 +59,8 @@ export async function pushRecord(operation: string, tableName: string, recordDat
       return upsert(persons, { ...data, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) });
     case 'personEntries':
       return upsert(personEntries, { ...data, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) });
+    case 'statsEntries':
+      return upsert(statsEntries, { ...data, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) });
     case 'dashboardLayout':
       return upsert(dashboardLayouts, { ...data, updatedAt: new Date(data.updatedAt) });
     case 'statsLayout':

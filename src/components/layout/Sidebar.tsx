@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Dashboard', icon: '◈' },
+  { href: '/dashboard', label: 'Dashboard', icon: '◈' },
   { href: '/tracker', label: 'Tracker', icon: '↔' },
   { href: '/loans', label: 'Loans', icon: '⟐' },
   { href: '/stats', label: 'Stats', icon: '▣' },
   { href: '/settings', label: 'Settings', icon: '⚙' },
 ];
 
-export default function Sidebar({ onClose }: { onClose: () => void }) {
+export default function Sidebar() {
   const pathname = usePathname();
 
   return (
@@ -30,7 +30,6 @@ export default function Sidebar({ onClose }: { onClose: () => void }) {
             <Link
               key={item.href}
               href={item.href}
-              onClick={onClose}
               className="flex items-center gap-3 px-5 py-3 text-sm transition-colors"
               style={{
                 background: isActive ? 'var(--color-bg-hover)' : 'transparent',

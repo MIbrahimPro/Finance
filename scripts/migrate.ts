@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { neon } from '@neondatabase/serverless';
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 
 async function main() {
   const sql = neon(process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL!);
@@ -20,7 +20,9 @@ async function main() {
   
   console.log('All tables dropped. Applying migration...');
 
-  const migration = readFileSync('drizzle/0000_daffy_silver_fox.sql', 'utf-8');
+  const files = readdirSync('drizzle').filter(f => f.endsWith('.sql'));
+  if (files.length === 0) throw new Error('No SQL migration files found');
+  const migration = readFileSync(`drizzle/${files[0]}`, 'utf-8');
   const statements = migration.split(';').filter(s => s.trim().length > 0);
   for (const stmt of statements) {
     await sql.query(stmt + ';');

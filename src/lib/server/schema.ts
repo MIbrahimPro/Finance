@@ -98,6 +98,16 @@ export const dashboardLayouts = pgTable('dashboardLayout', {
   updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
 });
 
+export const statsEntries = pgTable('statsEntry', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  section: text('section', { enum: ['assets', 'liabilities', 'income', 'expenses'] }).notNull(),
+  title: text('title').notNull(),
+  amount: real('amount').notNull(),
+  timestamp: timestamp('timestamp', { mode: 'date' }).notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+});
+
 export const statsLayouts = pgTable('statsLayout', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),

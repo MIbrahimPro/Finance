@@ -1,6 +1,7 @@
 import { SessionProvider } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import RegisterSW from '@/components/layout/RegisterSW';
+import SWUpdater from '@/components/layout/SWUpdater';
 import './globals.css';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="h-full overflow-hidden">
         <RegisterSW />
+        <SWUpdater />
         <SessionProvider>
           {children}
         </SessionProvider>

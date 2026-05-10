@@ -71,11 +71,24 @@ export interface Setting {
   value: string;
 }
 
+export type StatsSection = 'assets' | 'liabilities' | 'income' | 'expenses';
+
+export interface StatsEntry {
+  id: string;
+  userId: string;
+  section: StatsSection;
+  title: string;
+  amount: number;
+  timestamp: number;
+  updatedAt: number;
+}
+
 export interface SyncPayload {
   transactions: Transaction[];
   tags: Tag[];
   persons: Person[];
   personEntries: PersonEntry[];
+  statsEntries: StatsEntry[];
   dashboardLayout: DashboardLayout[];
   statsLayout: StatsLayout[];
 }
