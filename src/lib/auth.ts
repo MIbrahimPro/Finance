@@ -1,0 +1,44 @@
+import NextAuth from 'next-auth';
+import Resend from 'next-auth/providers/resend';
+import { getDb } from './server/db';
+import { accounts, sessions, users, verificationTokens, authenticators } from './server/schema';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
+
+function createAdapter() {
+  try {
+    if (!process.env.DATABASE_URL) return undefined;
+    return DrizzleAdapter(getDb(), {
+      usersTable: users,
+      accountsTable: accounts,
+      sessionsTable: sessions,
+      verificationTokensTable: verificationTokens,
+      authenticatorsTable: authenticators,
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: createAdapter(),
+  providers: [
+    Resend({
+      from: process.env.AUTH_EMAIL_FROM || 'Finance <noreply@yourdomain.com>',
+    }),
+  ],
+  session: {
+    strategy: 'jwt',
+    maxAge: 90 * 24 * 60 * 60,
+  },
+  callbacks: {
+    session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: '/login',
+  },
+});

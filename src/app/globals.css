@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Gugi&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-charcoal: #121212;
+  --color-dark-grey: #1E1E1E;
+  --color-dark-grey-hover: #2D2D2D;
+  --color-cream: #F5F5DC;
+  --color-cream-muted: #C4C4A8;
+  --color-success: #4ADE80;
+  --color-danger: #F87171;
+  --color-warning: #FBBF24;
+  --color-accent: #818CF8;
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Gugi', cursive;
+  --color-background: #121212;
+  --color-foreground: #F5F5DC;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2D2D2D #121212;
+}
+
+body {
+  background: #121212;
+  color: #F5F5DC;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  margin: 0;
+}
+
+input, textarea, select, button {
+  font-family: 'Inter', sans-serif;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #F5F5DC;
+  -webkit-box-shadow: 0 0 0px 1000px #1E1E1E inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
