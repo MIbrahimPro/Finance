@@ -1,5 +1,5 @@
 {
-  "id": "d33dee49-c280-4284-8b44-f2d0697b9521",
+  "id": "138c31cf-6207-4ebc-8b0d-4878add5adee",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -248,8 +248,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.loan": {
-      "name": "loan",
+    "public.personEntry": {
+      "name": "personEntry",
       "schema": "",
       "columns": {
         "id": {
@@ -264,8 +264,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "entityName": {
-          "name": "entityName",
+        "personId": {
+          "name": "personId",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -282,12 +282,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "description": {
-          "name": "description",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "default": "''"
+          "notNull": true
         },
         "timestamp": {
           "name": "timestamp",
@@ -295,19 +294,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "settled": {
-          "name": "settled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "settledAt": {
-          "name": "settledAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -319,9 +305,81 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "loan_userId_user_id_fk": {
-          "name": "loan_userId_user_id_fk",
-          "tableFrom": "loan",
+        "personEntry_userId_user_id_fk": {
+          "name": "personEntry_userId_user_id_fk",
+          "tableFrom": "personEntry",
+          "tableTo": "user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "personEntry_personId_person_id_fk": {
+          "name": "personEntry_personId_person_id_fk",
+          "tableFrom": "personEntry",
+          "tableTo": "person",
+          "columnsFrom": [
+            "personId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.person": {
+      "name": "person",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "person_userId_user_id_fk": {
+          "name": "person_userId_user_id_fk",
+          "tableFrom": "person",
           "tableTo": "user",
           "columnsFrom": [
             "userId"
@@ -384,6 +442,122 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.statsLayout": {
+      "name": "statsLayout",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "layout": {
+          "name": "layout",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "statsLayout_userId_user_id_fk": {
+          "name": "statsLayout_userId_user_id_fk",
+          "tableFrom": "statsLayout",
+          "tableTo": "user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tag": {
+      "name": "tag",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tag_userId_user_id_fk": {
+          "name": "tag_userId_user_id_fk",
+          "tableFrom": "tag",
+          "tableTo": "user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.transaction": {
       "name": "transaction",
       "schema": "",
@@ -406,8 +580,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "category": {
-          "name": "category",
+        "tagId": {
+          "name": "tagId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -424,12 +604,6 @@
           "primaryKey": false,
           "notNull": false,
           "default": "''"
-        },
-        "entity": {
-          "name": "entity",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "timestamp": {
           "name": "timestamp",
@@ -459,6 +633,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "transaction_tagId_tag_id_fk": {
+          "name": "transaction_tagId_tag_id_fk",
+          "tableFrom": "transaction",
+          "tableTo": "tag",
+          "columnsFrom": [
+            "tagId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },

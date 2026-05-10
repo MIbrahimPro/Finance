@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { computeNetWorth } from '@/lib/utils';
+import { buildSixMonthNetWorth, formatCurrency } from '@/lib/utils';
 import {
   AreaChart,
   Area,
@@ -12,26 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import type { Transaction, Loan } from '@/lib/types';
-
-function buildSixMonthNetWorth(transactions: Transaction[], loans: Loan[]) {
-  const now = new Date();
-  const months: { label: string; value: number }[] = [];
-
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getTime();
-    const label = d.toLocaleString('default', { month: 'short' });
-
-    const txnsUpTo = transactions.filter((t) => t.timestamp <= endOfMonth);
-    const loansUpTo = loans.filter((l) => l.timestamp <= endOfMonth);
-    const value = computeNetWorth(txnsUpTo, loansUpTo);
-
-    months.push({ label, value });
-  }
-
-  return months;
-}
+import type { Transaction, Person, PersonEntry } from '@/lib/types';
 
 export default function NetWorthChart() {
   const { data: session } = useSession();
@@ -39,37 +20,41 @@ export default function NetWorthChart() {
     () => db.transactions.where('userId').equals(session?.user?.id ?? '').toArray(),
     [session],
   ) as Transaction[] | undefined;
-  const loans = useLiveQuery(
-    () => db.loans.where('userId').equals(session?.user?.id ?? '').toArray(),
+  const persons = useLiveQuery(
+    () => db.persons.where('userId').equals(session?.user?.id ?? '').toArray(),
     [session],
-  ) as Loan[] | undefined;
+  ) as Person[] | undefined;
+  const entries = useLiveQuery(
+    () => db.personEntries.where('userId').equals(session?.user?.id ?? '').toArray(),
+    [session],
+  ) as PersonEntry[] | undefined;
 
-  if (!transactions || !loans) {
+  if (!transactions || !persons || !entries) {
     return (
-      <div className="bg-dark-grey rounded-xl border border-dark-grey-hover p-5 h-full animate-pulse" />
+      <div className="rounded-xl border p-5 h-full animate-pulse" style={{ background: 'var(--color-card)', borderColor: 'var(--color-card-border)' }} />
     );
   }
 
-  const data = buildSixMonthNetWorth(transactions, loans);
+  const data = buildSixMonthNetWorth(transactions, persons, entries);
 
   return (
-    <div className="bg-dark-grey rounded-xl border border-dark-grey-hover p-5 h-full">
-      <span className="text-cream-muted text-xs uppercase tracking-wider mb-3 block">Net Worth (6mo)</span>
+    <div className="rounded-xl border p-5 h-full" style={{ background: 'var(--color-card)', borderColor: 'var(--color-card-border)' }}>
+      <span className="text-xs uppercase tracking-wider mb-3 block" style={{ color: 'var(--color-text-muted)' }}>Net Worth (6mo)</span>
       <ResponsiveContainer width="100%" height="90%">
         <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
           <defs>
-            <linearGradient id="netWorthGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#818CF8" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="#818CF8" stopOpacity={0} />
+            <linearGradient id="nwGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#C4C4A8', fontSize: 10 }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#C4C4A8', fontSize: 10 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }} />
+          <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
           <Tooltip
-            contentStyle={{ background: '#1E1E1E', border: '1px solid #2D2D2D', borderRadius: 8, color: '#F5F5DC', fontSize: 12 }}
-            formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Net Worth']}
+            contentStyle={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8, color: 'var(--color-text)', fontSize: 12 }}
+            formatter={(value: any) => [formatCurrency(Number(value)), 'Net Worth']}
           />
-          <Area type="monotone" dataKey="value" stroke="#818CF8" strokeWidth={2} fill="url(#netWorthGrad)" />
+          <Area type="monotone" dataKey="value" stroke="var(--color-accent)" strokeWidth={2} fill="url(#nwGrad)" />
         </AreaChart>
       </ResponsiveContainer>
     </div>

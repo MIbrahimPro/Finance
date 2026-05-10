@@ -2,123 +2,66 @@
 
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/server/db';
-import { transactions, loans, dashboardLayouts } from '@/lib/server/schema';
+import { transactions, tags, persons, personEntries, dashboardLayouts, statsLayouts } from '@/lib/server/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import type { SyncPayload } from '@/lib/types';
-import type { Session } from 'next-auth';
 
 async function getUserIdOrThrow(): Promise<string> {
-  const session: Session | null = await auth();
+  const session = await auth();
   const userId = session?.user?.id;
   if (!userId) throw new Error('Unauthorized');
   return userId;
 }
 
-export async function pullChanges(since: number): Promise<SyncPayload> {
+export async function pullRemote(since: number): Promise<SyncPayload> {
   const userId = await getUserIdOrThrow();
-
   const sinceDate = new Date(since);
 
-  const txns = await getDb()
-    .select()
-    .from(transactions)
-    .where(and(eq(transactions.userId, userId), gt(transactions.updatedAt, sinceDate)));
-
-  const loanRecords = await getDb()
-    .select()
-    .from(loans)
-
-  const layouts = await getDb()
-    .select()
-    .from(dashboardLayouts)
-    .where(and(eq(dashboardLayouts.userId, userId), gt(dashboardLayouts.updatedAt, sinceDate)));
+  const txns = await getDb().select().from(transactions).where(and(eq(transactions.userId, userId), gt(transactions.updatedAt, sinceDate)));
+  const tagRows = await getDb().select().from(tags).where(and(eq(tags.userId, userId), gt(tags.updatedAt, sinceDate)));
+  const personRows = await getDb().select().from(persons).where(and(eq(persons.userId, userId), gt(persons.updatedAt, sinceDate)));
+  const entryRows = await getDb().select().from(personEntries).where(and(eq(personEntries.userId, userId), gt(personEntries.updatedAt, sinceDate)));
+  const layoutRows = await getDb().select().from(dashboardLayouts).where(and(eq(dashboardLayouts.userId, userId), gt(dashboardLayouts.updatedAt, sinceDate)));
+  const statsLayoutRows = await getDb().select().from(statsLayouts).where(and(eq(statsLayouts.userId, userId), gt(statsLayouts.updatedAt, sinceDate)));
 
   return {
-    transactions: txns.map((t) => ({ ...t, updatedAt: t.updatedAt!.getTime(), timestamp: t.timestamp!.getTime() })),
-    loans: loanRecords.map((l) => ({ ...l, updatedAt: l.updatedAt!.getTime(), timestamp: l.timestamp!.getTime(), settledAt: l.settledAt?.getTime() })),
-    dashboardLayout: layouts.map((d) => ({ ...d, updatedAt: d.updatedAt!.getTime() })),
+    transactions: txns.map((t: any) => ({ ...t, updatedAt: t.updatedAt?.getTime() ?? 0, timestamp: t.timestamp?.getTime() ?? 0 })),
+    tags: tagRows.map((t: any) => ({ ...t })),
+    persons: personRows.map((p: any) => ({ ...p, timestamp: p.timestamp?.getTime() ?? 0, updatedAt: p.updatedAt?.getTime() ?? 0 })),
+    personEntries: entryRows.map((e: any) => ({ ...e, timestamp: e.timestamp?.getTime() ?? 0, updatedAt: e.updatedAt?.getTime() ?? 0 })),
+    dashboardLayout: layoutRows.map((l: any) => ({ ...l, updatedAt: l.updatedAt?.getTime() ?? 0 })),
+    statsLayout: statsLayoutRows.map((l: any) => ({ ...l, updatedAt: l.updatedAt?.getTime() ?? 0 })),
   } as unknown as SyncPayload;
 }
 
-export async function pushTransaction(data: {
-  id: string;
-  type: 'income' | 'expense';
-  category: string;
-  amount: number;
-  description?: string;
-  entity?: string;
-  timestamp: number;
-  updatedAt: number;
-}) {
-  const userId = await getUserIdOrThrow();
-
-  await getDb()
-    .insert(transactions)
-    .values({ ...data, userId, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) })
-    .onConflictDoUpdate({
-      target: transactions.id,
-      set: { ...data, userId, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) },
-    });
+async function upsert(table: any, data: any) {
+  const db = getDb();
+  await db.insert(table).values(data).onConflictDoUpdate({ target: table.id, set: data });
 }
 
-export async function deleteTransaction(id: string) {
-  const userId = await getUserIdOrThrow();
-
-  await getDb().delete(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
+async function del(table: any, id: string, userId: string) {
+  await getDb().delete(table).where(and(eq(table.id, id), eq(table.userId, userId)));
 }
 
-export async function pushLoan(data: {
-  id: string;
-  entityName: string;
-  direction: 'owed_to_me' | 'i_owe';
-  amount: number;
-  description?: string;
-  timestamp: number;
-  settled: boolean;
-  settledAt?: number;
-  updatedAt: number;
-}) {
+export async function pushRecord(operation: string, tableName: string, recordData: string) {
   const userId = await getUserIdOrThrow();
+  const data = JSON.parse(recordData);
 
-  await getDb()
-    .insert(loans)
-    .values({
-      ...data,
-      userId,
-      timestamp: new Date(data.timestamp),
-      settledAt: data.settledAt ? new Date(data.settledAt) : null,
-      updatedAt: new Date(data.updatedAt),
-    })
-    .onConflictDoUpdate({
-      target: loans.id,
-      set: {
-        ...data,
-        userId,
-        timestamp: new Date(data.timestamp),
-        settledAt: data.settledAt ? new Date(data.settledAt) : null,
-        updatedAt: new Date(data.updatedAt),
-      },
-    });
-}
-
-export async function deleteLoan(id: string) {
-  const userId = await getUserIdOrThrow();
-
-  await getDb().delete(loans).where(and(eq(loans.id, id), eq(loans.userId, userId)));
-}
-
-export async function pushDashboardLayout(data: {
-  id: string;
-  layout: string[];
-  updatedAt: number;
-}) {
-  const userId = await getUserIdOrThrow();
-
-  await getDb()
-    .insert(dashboardLayouts)
-    .values({ ...data, userId, updatedAt: new Date(data.updatedAt) })
-    .onConflictDoUpdate({
-      target: dashboardLayouts.id,
-      set: { ...data, userId, updatedAt: new Date(data.updatedAt) },
-    });
+  switch (tableName) {
+    case 'transactions':
+      if (operation === 'delete') return del(transactions, data.id, userId);
+      return upsert(transactions, { ...data, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) });
+    case 'tags':
+      return upsert(tags, data);
+    case 'persons':
+      return upsert(persons, { ...data, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) });
+    case 'personEntries':
+      return upsert(personEntries, { ...data, timestamp: new Date(data.timestamp), updatedAt: new Date(data.updatedAt) });
+    case 'dashboardLayout':
+      return upsert(dashboardLayouts, { ...data, updatedAt: new Date(data.updatedAt) });
+    case 'statsLayout':
+      return upsert(statsLayouts, { ...data, updatedAt: new Date(data.updatedAt) });
+    default:
+      throw new Error(`Unknown table: ${tableName}`);
+  }
 }

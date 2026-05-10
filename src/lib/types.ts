@@ -4,26 +4,40 @@ export interface Transaction {
   id: string;
   userId: string;
   type: TransactionType;
-  category: string;
+  tagId: string;
+  title: string;
   amount: number;
   description: string;
-  entity?: string;
   timestamp: number;
   updatedAt: number;
 }
 
-export type LoanDirection = 'owed_to_me' | 'i_owe';
-
-export interface Loan {
+export interface Tag {
   id: string;
   userId: string;
-  entityName: string;
+  name: string;
+  color: string;
+  type: TransactionType;
+}
+
+export type LoanDirection = 'lent' | 'borrowed';
+
+export interface Person {
+  id: string;
+  userId: string;
+  name: string;
+  timestamp: number;
+  updatedAt: number;
+}
+
+export interface PersonEntry {
+  id: string;
+  userId: string;
+  personId: string;
   direction: LoanDirection;
   amount: number;
-  description: string;
+  title: string;
   timestamp: number;
-  settled: boolean;
-  settledAt?: number;
   updatedAt: number;
 }
 
@@ -34,10 +48,17 @@ export interface DashboardLayout {
   updatedAt: number;
 }
 
+export interface StatsLayout {
+  id: string;
+  userId: string;
+  layout: string[];
+  updatedAt: number;
+}
+
 export interface SyncQueueItem {
   id: string;
   operation: 'create' | 'update' | 'delete';
-  tableName: 'transactions' | 'loans' | 'dashboardLayout';
+  tableName: string;
   recordId: string;
   recordData: string;
   userId: string;
@@ -52,8 +73,11 @@ export interface Setting {
 
 export interface SyncPayload {
   transactions: Transaction[];
-  loans: Loan[];
+  tags: Tag[];
+  persons: Person[];
+  personEntries: PersonEntry[];
   dashboardLayout: DashboardLayout[];
+  statsLayout: StatsLayout[];
 }
 
 export type WidgetType = 'netWorth' | 'netWorthChart' | 'quickStats' | 'burnRate' | 'dailyExpense';

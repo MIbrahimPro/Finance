@@ -32,7 +32,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 90 * 24 * 60 * 60,
   },
   callbacks: {
-    async jwt({ token, user }) {
+    authorized({ request, auth }) {
+      const { pathname } = request.nextUrl;
+      if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) return true;
+      return !!auth;
+    },
+    jwt({ token, user }) {
       if (user) token.sub = user.id;
       return token;
     },

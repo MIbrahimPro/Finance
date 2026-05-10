@@ -33,16 +33,22 @@ CREATE TABLE "dashboardLayout" (
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "loan" (
+CREATE TABLE "personEntry" (
 	"id" text PRIMARY KEY NOT NULL,
 	"userId" text NOT NULL,
-	"entityName" text NOT NULL,
+	"personId" text NOT NULL,
 	"direction" text NOT NULL,
 	"amount" real NOT NULL,
-	"description" text DEFAULT '',
+	"title" text NOT NULL,
 	"timestamp" timestamp DEFAULT now() NOT NULL,
-	"settled" boolean DEFAULT false,
-	"settledAt" timestamp,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "person" (
+	"id" text PRIMARY KEY NOT NULL,
+	"userId" text NOT NULL,
+	"name" text NOT NULL,
+	"timestamp" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -52,14 +58,30 @@ CREATE TABLE "session" (
 	"expires" timestamp NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "statsLayout" (
+	"id" text PRIMARY KEY NOT NULL,
+	"userId" text NOT NULL,
+	"layout" jsonb NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tag" (
+	"id" text PRIMARY KEY NOT NULL,
+	"userId" text NOT NULL,
+	"name" text NOT NULL,
+	"color" text NOT NULL,
+	"type" text NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "transaction" (
 	"id" text PRIMARY KEY NOT NULL,
 	"userId" text NOT NULL,
 	"type" text NOT NULL,
-	"category" text NOT NULL,
+	"tagId" text NOT NULL,
+	"title" text NOT NULL,
 	"amount" real NOT NULL,
 	"description" text DEFAULT '',
-	"entity" text,
 	"timestamp" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
@@ -83,6 +105,11 @@ CREATE TABLE "verificationToken" (
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "authenticator" ADD CONSTRAINT "authenticator_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dashboardLayout" ADD CONSTRAINT "dashboardLayout_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "loan" ADD CONSTRAINT "loan_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "personEntry" ADD CONSTRAINT "personEntry_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "personEntry" ADD CONSTRAINT "personEntry_personId_person_id_fk" FOREIGN KEY ("personId") REFERENCES "public"."person"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "person" ADD CONSTRAINT "person_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "transaction" ADD CONSTRAINT "transaction_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "statsLayout" ADD CONSTRAINT "statsLayout_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tag" ADD CONSTRAINT "tag_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transaction" ADD CONSTRAINT "transaction_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transaction" ADD CONSTRAINT "transaction_tagId_tag_id_fk" FOREIGN KEY ("tagId") REFERENCES "public"."tag"("id") ON DELETE no action ON UPDATE no action;

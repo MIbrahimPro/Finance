@@ -1,27 +1,26 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { computeNetWorth } from '@/lib/utils';
-import type { Transaction, Loan } from '@/lib/types';
+import { useSession } from 'next-auth/react';
+import type { Transaction, PersonEntry, Person } from '@/lib/types';
 
-export function useNetWorth(userId: string) {
-  const transactions = useLiveQuery(
-    () => db.transactions.where('userId').equals(userId).toArray(),
-    [userId],
-  ) as Transaction[] | undefined;
+export function useNetWorth() {
+  const { data: session } = useSession();
+  const uid = session?.user?.id ?? '';
 
-  const loans = useLiveQuery(
-    () => db.loans.where('userId').equals(userId).toArray(),
-    [userId],
-  ) as Loan[] | undefined;
+  const transactions = useLiveQuery(() => db.transactions.where('userId').equals(uid).toArray(), [uid]) as Transaction[] | undefined;
+  const personEntries = useLiveQuery(() => db.personEntries.where('userId').equals(uid).toArray(), [uid]) as PersonEntry[] | undefined;
 
-  if (!transactions || !loans) {
-    return { netWorth: 0, transactions: [], loans: [], loading: true };
+  if (!transactions || !personEntries) {
+    return { netWorth: 0, loading: true };
   }
 
+  const income = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const expenses = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const lent = personEntries.filter((e) => e.direction === 'lent').reduce((s, e) => s + e.amount, 0);
+  const borrowed = personEntries.filter((e) => e.direction === 'borrowed').reduce((s, e) => s + e.amount, 0);
+
   return {
-    netWorth: computeNetWorth(transactions, loans),
-    transactions,
-    loans,
+    netWorth: income - expenses + lent - borrowed,
     loading: false,
   };
 }

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Sidebar from '@/components/layout/Sidebar';
+import MobileNav from '@/components/layout/MobileNav';
 import Header from '@/components/layout/Header';
 import PWAPrompt from '@/components/layout/PWAPrompt';
 import { useSync } from '@/hooks/useSync';
@@ -11,6 +12,7 @@ import { db } from '@/lib/db';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   useSync();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -18,15 +20,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [session]);
 
   return (
-    <div className="h-screen flex overflow-hidden bg-charcoal">
-      <Sidebar />
+    <div className="h-screen flex overflow-hidden" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar onClose={() => setSidebarOpen(false)} />
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ background: 'var(--color-overlay)' }}
+          onClick={() => setSidebarOpen(false)}
+        >
+          <div className="relative h-full" onClick={(e) => e.stopPropagation()}>
+            <Sidebar onClose={() => setSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-hidden p-6">
+        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        <main className="flex-1 overflow-hidden p-4 md:p-6 pb-20 lg:pb-6">
           {children}
         </main>
-        <PWAPrompt />
+        <MobileNav />
       </div>
+      <PWAPrompt />
     </div>
   );
 }

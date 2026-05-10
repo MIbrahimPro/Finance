@@ -1,24 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-function getIsOnline() {
-  return typeof navigator !== 'undefined' ? navigator.onLine : true;
-}
-
-export function useOnlineStatus() {
-  const [isOnline, setIsOnline] = useState(getIsOnline);
+export function useOnlineStatus(): boolean {
+  const [isOnline, setIsOnline] = useState(true);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    setIsOnline(navigator.onLine);
+    setReady(true);
+    const go = () => setIsOnline(true);
+    const goAway = () => setIsOnline(false);
+    window.addEventListener('online', go);
+    window.addEventListener('offline', goAway);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', go);
+      window.removeEventListener('offline', goAway);
     };
   }, []);
 
-  return isOnline;
+  return ready ? isOnline : true;
 }

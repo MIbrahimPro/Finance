@@ -1,44 +1,95 @@
 @import url('https://fonts.googleapis.com/css2?family=Gugi&family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+:root,
+[data-theme='dark'] {
+  --color-bg: #121212;
+  --color-bg-secondary: #1E1E1E;
+  --color-bg-hover: #2D2D2D;
+  --color-text: #F5F5DC;
+  --color-text-muted: #C4C4A8;
+  --color-border: #2D2D2D;
+  --color-accent: #818CF8;
+  --color-success: #4ADE80;
+  --color-danger: #F87171;
+  --color-warning: #FBBF24;
+  --color-card: #1E1E1E;
+  --color-card-border: #2D2D2D;
+  --color-input-bg: #121212;
+  --color-input-border: #2D2D2D;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] {
+  --color-bg: #FDF6E3;
+  --color-bg-secondary: #F5E6C8;
+  --color-bg-hover: #EDD8B0;
+  --color-text: #5D4037;
+  --color-text-muted: #8D6E63;
+  --color-border: #D7CCC8;
+  --color-accent: #8B4513;
+  --color-success: #2E7D32;
+  --color-danger: #C62828;
+  --color-warning: #F9A825;
+  --color-card: #F5E6C8;
+  --color-card-border: #D7CCC8;
+  --color-input-bg: #FDF6E3;
+  --color-input-border: #D7CCC8;
+  --color-overlay: rgba(0, 0, 0, 0.3);
+}
+
 @theme inline {
   --color-charcoal: #121212;
   --color-dark-grey: #1E1E1E;
   --color-dark-grey-hover: #2D2D2D;
   --color-cream: #F5F5DC;
   --color-cream-muted: #C4C4A8;
+  --color-paper: #FDF6E3;
+  --color-paper-card: #F5E6C8;
+  --color-paper-border: #D7CCC8;
+  --color-paper-text: #5D4037;
   --color-success: #4ADE80;
   --color-danger: #F87171;
   --color-warning: #FBBF24;
   --color-accent: #818CF8;
   --font-sans: 'Inter', sans-serif;
   --font-display: 'Gugi', cursive;
-  --color-background: #121212;
-  --color-foreground: #F5F5DC;
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #2D2D2D #121212;
+html {
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 body {
-  background: #121212;
-  color: #F5F5DC;
   font-family: 'Inter', sans-serif;
   overflow: hidden;
   height: 100vh;
   margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 input, textarea, select, button {
   font-family: 'Inter', sans-serif;
 }
 
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #F5F5DC;
-  -webkit-box-shadow: 0 0 0px 1000px #1E1E1E inset;
-  transition: background-color 5000s ease-in-out 0s;
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-bg-hover) var(--color-bg);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: white;
 }

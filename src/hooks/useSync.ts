@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { db, addToSyncQueue } from '@/lib/db';
 import { useOnlineStatus } from './useOnlineStatus';
@@ -8,43 +8,39 @@ import { useOnlineStatus } from './useOnlineStatus';
 export function useSync() {
   const { data: session } = useSession();
   const isOnline = useOnlineStatus();
+  const lastSyncRef = useRef(0);
 
   const syncNow = useCallback(async () => {
     if (!session?.user?.id || !isOnline) return;
-
-    const lastSync = await db.settings.get('lastSyncAt');
-    const lastSyncVal = lastSync?.value ? parseInt(lastSync.value, 10) : 0;
+    lastSyncRef.current = Date.now();
 
     try {
-      const res = await fetch(
-        `/api/sync/pull?since=${lastSyncVal}&userId=${session.user.id}`,
-      );
+      const res = await fetch(`/api/sync/pull?since=${lastSyncRef.current}&userId=${session.user.id}`);
       if (!res.ok) return;
       const remote = await res.json();
 
-      for (const table of ['transactions', 'loans', 'dashboardLayout'] as const) {
+      for (const table of ['transactions', 'tags', 'persons', 'personEntries', 'dashboardLayout', 'statsLayout'] as const) {
         const records = remote[table] ?? [];
         for (const record of records) {
-          const local = await db[table].get(record.id);
+          const local = await (db as any)[table].get(record.id);
           const remoteTime = new Date(record.updatedAt).getTime();
           if (!local || remoteTime > local.updatedAt) {
-            await db[table].put({ ...record, updatedAt: remoteTime });
+            await (db as any)[table].put({ ...record, updatedAt: remoteTime });
           }
         }
       }
 
       await db.settings.put({ key: 'lastSyncAt', value: String(Date.now()) });
     } catch {
-      // Silently fail — will retry on next interval
+      // retry later
     }
   }, [session, isOnline]);
 
   const pushPending = useCallback(async () => {
     if (!session?.user?.id || !isOnline) return;
 
-    const pending = await db.syncQueue
-      .where({ userId: session.user.id, synced: false })
-      .toArray();
+    const pending = await db.syncQueue.where({ userId: session.user.id, synced: false }).toArray();
+    if (pending.length === 0) return;
 
     for (const item of pending) {
       try {
@@ -58,9 +54,7 @@ export function useSync() {
             recordData: item.recordData,
           }),
         });
-        if (res.ok) {
-          await db.syncQueue.update(item.id, { synced: true });
-        }
+        if (res.ok) await db.syncQueue.update(item.id, { synced: true });
       } catch {
         break;
       }
@@ -68,24 +62,37 @@ export function useSync() {
   }, [session, isOnline]);
 
   useEffect(() => {
-    if (!isOnline || !session?.user?.id) return;
-    syncNow();
-    const interval = setInterval(() => {
-      pushPending();
+    if (!session?.user?.id) return;
+    if (isOnline) {
       syncNow();
+      pushPending();
+    }
+    const interval = setInterval(() => {
+      if (isOnline) {
+        pushPending();
+        syncNow();
+      }
     }, 30000);
-    return () => clearInterval(interval);
-  }, [isOnline, session, syncNow, pushPending]);
+    const handleFocus = () => { if (isOnline) syncNow(); };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isOnline) syncNow();
+    });
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [session, isOnline, syncNow, pushPending]);
 
   return { syncNow, pushPending };
 }
 
-export async function onLocalWrite(
+export function queueWrite(
   operation: 'create' | 'update' | 'delete',
-  tableName: 'transactions' | 'loans' | 'dashboardLayout',
+  tableName: string,
   recordId: string,
   recordData: unknown,
   userId: string,
 ) {
-  await addToSyncQueue(operation, tableName, recordId, recordData, userId);
+  return addToSyncQueue(operation, tableName, recordId, recordData, userId);
 }

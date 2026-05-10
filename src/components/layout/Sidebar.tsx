@@ -5,31 +5,38 @@ import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: '◈' },
-  { href: '/transactions', label: 'Transactions', icon: '↔' },
-  { href: '/loans', label: 'Loans & Debt', icon: '⟐' },
+  { href: '/tracker', label: 'Tracker', icon: '↔' },
+  { href: '/loans', label: 'Loans', icon: '⟐' },
+  { href: '/stats', label: 'Stats', icon: '▣' },
+  { href: '/settings', label: 'Settings', icon: '⚙' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }: { onClose: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 min-w-56 bg-dark-grey border-r border-dark-grey-hover flex flex-col h-full">
-      <div className="p-5 border-b border-dark-grey-hover">
-        <h1 className="font-display text-cream text-xl tracking-wider">Finance</h1>
-        <p className="text-cream-muted text-xs mt-0.5">Personal Ledger</p>
+    <aside
+      className="w-60 min-w-60 h-full flex flex-col border-r"
+      style={{ background: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+    >
+      <div className="p-5 border-b" style={{ borderColor: 'var(--color-border)' }}>
+        <h1 className="font-display text-lg tracking-wider" style={{ color: 'var(--color-text)' }}>Finance</h1>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Personal Ledger</p>
       </div>
       <nav className="flex-1 py-4">
         {NAV_ITEMS.map((item) => {
-          const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+          const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-5 py-3 text-sm transition-colors ${
-                isActive
-                  ? 'bg-dark-grey-hover text-cream border-r-2 border-cream'
-                  : 'text-cream-muted hover:text-cream hover:bg-dark-grey-hover'
-              }`}
+              onClick={onClose}
+              className="flex items-center gap-3 px-5 py-3 text-sm transition-colors"
+              style={{
+                background: isActive ? 'var(--color-bg-hover)' : 'transparent',
+                color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
+                borderRight: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+              }}
             >
               <span className="text-lg">{item.icon}</span>
               <span>{item.label}</span>
@@ -37,10 +44,8 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-dark-grey-hover">
-        <div className="text-cream-muted text-xs">
-          Finance v1.0
-        </div>
+      <div className="p-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+        <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Finance v1.0</p>
       </div>
     </aside>
   );

@@ -69,7 +69,7 @@ function SortableWidget({ id, wide }: { id: string; wide?: boolean }) {
 
 export default function DraggableGrid() {
   const { data: session } = useSession();
-  const { layout, saveLayout } = useDashboardLayout(session?.user?.id ?? '');
+  const { layout, saveLayout } = useDashboardLayout();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
