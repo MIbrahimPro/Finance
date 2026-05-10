@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+import PWAPrompt from '@/components/layout/PWAPrompt';
 import { useSync } from '@/hooks/useSync';
 import { db } from '@/lib/db';
 
@@ -24,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-hidden p-6">
           {children}
         </main>
+        <PWAPrompt />
       </div>
     </div>
   );

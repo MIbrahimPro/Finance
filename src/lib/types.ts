@@ -56,7 +56,7 @@ export interface SyncPayload {
   dashboardLayout: DashboardLayout[];
 }
 
-export type WidgetType = 'netWorth' | 'netWorthChart' | 'quickStats' | 'burnRate';
+export type WidgetType = 'netWorth' | 'netWorthChart' | 'quickStats' | 'burnRate' | 'dailyExpense';
 
 export interface WidgetConfig {
   id: WidgetType;

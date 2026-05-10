@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -21,16 +21,26 @@ import NetWorthWidget from './NetWorthWidget';
 import NetWorthChart from './NetWorthChart';
 import QuickStats from './QuickStats';
 import BurnRateIndicator from './BurnRateIndicator';
-import type { WidgetType, WidgetConfig } from '@/lib/types';
+import DailyExpenseChart from './DailyExpenseChart';
+import type { WidgetType } from '@/lib/types';
 
-const WIDGETS: Record<WidgetType, WidgetConfig> = {
-  netWorth: { id: 'netWorth', title: 'Net Worth' },
-  quickStats: { id: 'quickStats', title: 'Quick Stats' },
-  netWorthChart: { id: 'netWorthChart', title: 'Net Worth Chart' },
-  burnRate: { id: 'burnRate', title: 'Burn Rate' },
+const WIDGET_COMPONENTS: Record<WidgetType, () => React.ReactElement> = {
+  netWorth: () => <NetWorthWidget />,
+  quickStats: () => <QuickStats />,
+  netWorthChart: () => <NetWorthChart />,
+  burnRate: () => <BurnRateIndicator />,
+  dailyExpense: () => <DailyExpenseChart />,
 };
 
-function SortableWidget({ id }: { id: string }) {
+const WIDGET_META: Record<WidgetType, { title: string; wide?: boolean }> = {
+  netWorth: { title: 'Net Worth', wide: true },
+  quickStats: { title: 'Quick Stats' },
+  netWorthChart: { title: 'Net Worth Chart', wide: true },
+  burnRate: { title: 'Burn Rate' },
+  dailyExpense: { title: 'Daily Expense', wide: true },
+};
+
+function SortableWidget({ id, wide }: { id: string; wide?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
@@ -40,24 +50,19 @@ function SortableWidget({ id }: { id: string }) {
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const renderWidget = () => {
-    switch (id) {
-      case 'netWorth':
-        return <NetWorthWidget />;
-      case 'quickStats':
-        return <QuickStats />;
-      case 'netWorthChart':
-        return <NetWorthChart />;
-      case 'burnRate':
-        return <BurnRateIndicator />;
-      default:
-        return null;
-    }
-  };
+  const Component = WIDGET_COMPONENTS[id as WidgetType];
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="h-full cursor-grab active:cursor-grabbing">
-      {renderWidget()}
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`h-full cursor-grab active:cursor-grabbing ${
+        wide ? 'col-span-2' : ''
+      }`}
+    >
+      {Component ? <Component /> : null}
     </div>
   );
 }
@@ -70,30 +75,39 @@ export default function DraggableGrid() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const widgetIds = useMemo(() => layout ?? ['netWorth', 'quickStats', 'netWorthChart', 'burnRate'], [layout]);
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-
-      const oldIndex = widgetIds.indexOf(active.id as string);
-      const newIndex = widgetIds.indexOf(over.id as string);
-      const newOrder = [...widgetIds];
-      newOrder.splice(oldIndex, 1);
-      newOrder.splice(newIndex, 0, active.id as string);
-      saveLayout(newOrder);
-    },
-    [widgetIds, saveLayout],
+  const widgetIds = useMemo(
+    () =>
+      layout ?? ['netWorth', 'quickStats', 'netWorthChart', 'burnRate', 'dailyExpense'],
+    [layout],
   );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = widgetIds.indexOf(active.id as string);
+    const newIndex = widgetIds.indexOf(over.id as string);
+    const newOrder = [...widgetIds];
+    newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, active.id as string);
+    saveLayout(newOrder);
+  };
 
   return (
     <div className="h-full">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext items={widgetIds} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-2 grid-rows-2 gap-4 h-full">
+          <div className="grid grid-cols-2 auto-rows-fr gap-4 h-full">
             {widgetIds.map((id) => (
-              <SortableWidget key={id} id={id} />
+              <SortableWidget
+                key={id}
+                id={id}
+                wide={WIDGET_META[id as WidgetType]?.wide}
+              />
             ))}
           </div>
         </SortableContext>

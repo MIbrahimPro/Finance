@@ -1,6 +1,6 @@
-import type { Transaction, Loan } from './types';
+import type { Transaction } from './types';
 
-export function computeNetWorth(transactions: Transaction[], loans: Loan[]): number {
+export function computeNetWorth(transactions: Transaction[], loans: { direction: 'owed_to_me' | 'i_owe'; amount: number; settled: boolean }[]): number {
   const income = transactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -77,4 +77,55 @@ export function formatDate(ts: number): string {
 
 export function generateId(): string {
   return crypto.randomUUID();
+}
+
+export function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+export function buildDailyExpenseData(transactions: Transaction[]): { day: number; amount: number; label: string }[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = getDaysInMonth(year, month);
+
+  const dailyMap = new Map<number, number>();
+  const monthStart = new Date(year, month, 1).getTime();
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    dailyMap.set(d, 0);
+  }
+
+  for (const t of transactions) {
+    if (t.type !== 'expense') continue;
+    if (t.timestamp < monthStart || t.timestamp > monthEnd) continue;
+    const day = new Date(t.timestamp).getDate();
+    dailyMap.set(day, (dailyMap.get(day) ?? 0) + t.amount);
+  }
+
+  return Array.from(dailyMap.entries()).map(([day, amount]) => ({
+    day,
+    amount,
+    label: new Date(year, month, day).toLocaleString('default', { day: 'numeric' }),
+  }));
+}
+
+export function buildMonthlyNetWorthData(transactions: Transaction[], loans: { timestamp: number; direction: 'owed_to_me' | 'i_owe'; amount: number; settled: boolean }[]): { label: string; value: number }[] {
+  const now = new Date();
+  const months: { label: string; value: number }[] = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+    const label = d.toLocaleString('default', { month: 'short' });
+
+    const txnsUpTo = transactions.filter((t) => t.timestamp <= endOfMonth);
+    const loansUpTo = loans.filter((l) => l.timestamp <= endOfMonth);
+    const value = computeNetWorth(txnsUpTo, loansUpTo);
+
+    months.push({ label, value });
+  }
+
+  return months;
 }
